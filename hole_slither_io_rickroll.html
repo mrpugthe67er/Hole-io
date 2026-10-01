@@ -1,0 +1,1473 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Hole Slither IO Rickroll - Master Admin Studio</title>
+  
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+
+  <style>
+    * {
+      box-sizing: border-box;
+      user-select: none;
+      -webkit-user-select: none;
+      touch-action: manipulation;
+    }
+    body, html {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background-color: #050010;
+      font-family: 'Inter', sans-serif;
+      color: #ffffff;
+    }
+    .font-orbitron {
+      font-family: 'Orbitron', sans-serif;
+    }
+    #gameCanvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+    .glass-panel {
+      background: rgba(15, 10, 30, 0.85);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border: 1px solid rgba(255, 0, 128, 0.35);
+      box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.6);
+    }
+    .neon-btn {
+      transition: all 0.2s ease-in-out;
+      background: linear-gradient(135deg, #ff007f 0%, #7928ca 100%);
+    }
+    .neon-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 0 18px rgba(255, 0, 128, 0.8);
+    }
+    .neon-btn-green {
+      background: linear-gradient(135deg, #00f2fe 0%, #4facfe 100%);
+    }
+    .neon-btn-green:hover {
+      box-shadow: 0 0 18px rgba(0, 242, 254, 0.8);
+    }
+    .neon-btn-red {
+      background: linear-gradient(135deg, #ff0844 0%, #ffb199 100%);
+    }
+    .neon-btn-red:hover {
+      box-shadow: 0 0 22px rgba(255, 8, 68, 0.9);
+    }
+    .admin-tab-active {
+      background: rgba(255, 0, 128, 0.3);
+      border-bottom: 2px solid #ff007f;
+      color: #ffffff;
+    }
+    /* Virtual Joystick */
+    #joystickZone {
+      position: absolute;
+      bottom: 30px;
+      left: 30px;
+      width: 120px;
+      height: 120px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.1);
+      border: 2px solid rgba(255, 255, 255, 0.2);
+      display: none;
+      touch-action: none;
+    }
+    #joystickKnob {
+      position: absolute;
+      top: 35px;
+      left: 35px;
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      background: radial-gradient(circle, #ff007f 0%, #7928ca 100%);
+      box-shadow: 0 0 10px #ff007f;
+    }
+    /* Custom Scrollbar for Admin Panel */
+    ::-webkit-scrollbar {
+      width: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: rgba(0, 0, 0, 0.4);
+    }
+    ::-webkit-scrollbar-thumb {
+      background: rgba(255, 0, 128, 0.5);
+      border-radius: 3px;
+    }
+  </style>
+</head>
+<body class="overflow-hidden">
+
+  <!-- 3D Canvas -->
+  <canvas id="gameCanvas"></canvas>
+
+  <!-- START MENU -->
+  <div id="startMenu" class="fixed inset-0 flex items-center justify-center z-50 p-4">
+    <div class="glass-panel p-8 rounded-2xl max-w-md w-full text-center border-pink-500/50 shadow-2xl relative overflow-hidden">
+      <div class="absolute -top-10 -left-10 w-32 h-32 bg-pink-500/20 rounded-full blur-2xl"></div>
+      <div class="absolute -bottom-10 -right-10 w-32 h-32 bg-purple-500/20 rounded-full blur-2xl"></div>
+
+      <h1 class="text-4xl font-black font-orbitron tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-pink-500 via-purple-400 to-cyan-400 mb-2">
+        HOLE SLITHER.IO
+      </h1>
+      <p class="text-xs text-pink-300 tracking-widest font-semibold uppercase mb-6">Synthwave Arena & Vault Quest</p>
+
+      <div class="space-y-4 mb-6 text-left">
+        <div>
+          <label class="text-xs text-gray-300 font-bold uppercase tracking-wider mb-1 block">Player Nickname</label>
+          <input type="text" id="playerNameInput" value="CyberHole" class="w-full bg-black/50 border border-purple-500/40 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-pink-500 font-semibold transition">
+        </div>
+
+        <div>
+          <label class="text-xs text-gray-300 font-bold uppercase tracking-wider mb-1 block">Game Mode</label>
+          <select id="gameModeSelect" onchange="toggleRoomInput()" class="w-full bg-black/50 border border-purple-500/40 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-pink-500 font-semibold transition">
+            <option value="solo">Solo AI Arena</option>
+            <option value="online">Online Multiplayer (Room Code)</option>
+          </select>
+        </div>
+
+        <div id="roomCodeContainer" class="hidden space-y-3">
+          <div>
+            <label class="text-xs text-gray-300 font-bold uppercase tracking-wider mb-1 block">Room Code</label>
+            <input type="text" id="roomCodeInput" value="SYNTH-84" class="w-full bg-black/50 border border-purple-500/40 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-pink-500 font-semibold transition">
+          </div>
+          <button onclick="sendGmailInvite()" class="w-full py-2.5 rounded-xl bg-red-600 hover:bg-red-500 font-orbitron font-bold text-xs text-white shadow-lg uppercase tracking-wider flex items-center justify-center gap-2 transition">
+            <i class="fa-solid fa-envelope"></i> Invite Via Gmail
+          </button>
+        </div>
+      </div>
+
+      <button onclick="startGame()" class="w-full py-4 rounded-xl font-orbitron font-bold text-lg text-white neon-btn shadow-lg uppercase tracking-wider">
+        <i class="fa-solid fa-play mr-2"></i> Enter Arena
+      </button>
+
+      <div class="mt-6 flex justify-center gap-4 text-xs text-gray-400">
+        <span><i class="fa-solid fa-keyboard mr-1"></i> Mouse / WASD to move</span>
+        <span><i class="fa-solid fa-pause mr-1"></i> Press 'P' for Pause / Studio</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- HEADS UP DISPLAY (HUD) -->
+  <div id="hud" class="fixed inset-0 pointer-events-none z-10 hidden flex-col justify-between p-4 sm:p-6">
+    <!-- Top HUD Bar -->
+    <div class="flex justify-between items-start w-full">
+      <div class="glass-panel px-4 py-3 rounded-xl pointer-events-auto flex items-center gap-4">
+        <div>
+          <div class="text-[10px] text-pink-400 uppercase font-bold tracking-wider">Player Hole</div>
+          <div id="hudPlayerName" class="font-orbitron font-bold text-white text-sm">CyberHole</div>
+        </div>
+        <div class="h-8 w-[1px] bg-white/10"></div>
+        <div>
+          <div class="text-[10px] text-cyan-400 uppercase font-bold tracking-wider">Mass</div>
+          <div id="hudMass" class="font-orbitron font-bold text-cyan-300 text-lg">1.0 m</div>
+        </div>
+      </div>
+
+      <!-- Rickroll Timer, Mini-map & Leaderboard -->
+      <div class="flex flex-col items-end gap-3">
+        <!-- RADAR MINI-MAP OVERLAY -->
+        <div class="glass-panel p-2 rounded-2xl pointer-events-auto border-cyan-500/50 shadow-xl relative overflow-hidden flex flex-col items-center">
+          <div class="w-full flex justify-between items-center px-2 py-1 mb-1 border-b border-cyan-500/30 text-[10px] font-orbitron font-bold text-cyan-400 tracking-wider">
+            <span><i class="fa-solid fa-radar text-cyan-400 animate-pulse mr-1"></i> RADAR</span>
+            <span class="text-pink-400">NW VAULT</span>
+          </div>
+          <div class="relative w-36 h-36 rounded-xl overflow-hidden bg-black/80 border border-cyan-500/30">
+            <canvas id="minimapCanvas" width="144" height="144" class="w-full h-full block"></canvas>
+          </div>
+        </div>
+
+        <div class="glass-panel px-4 py-2 rounded-xl pointer-events-auto flex items-center gap-2 border-yellow-500/50">
+          <i class="fa-solid fa-compact-disc text-yellow-400 animate-spin"></i>
+          <span class="text-xs font-bold text-yellow-300 font-orbitron">RICKROLL IN:</span>
+          <span id="rickrollTimer" class="font-orbitron font-bold text-yellow-400 text-sm">03:00</span>
+        </div>
+
+        <div class="glass-panel p-3 rounded-xl pointer-events-auto min-w-[180px]">
+          <div class="text-[10px] text-purple-400 uppercase font-bold tracking-wider mb-2 flex justify-between">
+            <span>Leaderboard</span>
+            <span id="playerCountLabel">0 Online</span>
+          </div>
+          <div id="leaderboardList" class="space-y-1 text-xs font-semibold">
+            <!-- Dynamic leaderboard entries -->
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bottom Controls & Studio Access -->
+    <div class="flex justify-between items-end w-full">
+      <div class="flex items-center gap-2 pointer-events-auto">
+        <button onclick="openPasscodeModal()" class="glass-panel p-3 rounded-xl hover:bg-white/10 transition text-pink-400 font-bold text-xs flex items-center gap-2 opacity-60 hover:opacity-100">
+          <i class="fa-solid fa-lock text-base"></i>
+          <span>ACCESS STUDIO</span>
+        </button>
+      </div>
+
+      <!-- Speed Boost Banner -->
+      <div class="glass-panel px-4 py-2 rounded-xl pointer-events-auto text-xs font-bold font-orbitron text-gray-300 flex items-center gap-2">
+        <i class="fa-solid fa-gauge-high text-pink-500"></i>
+        <span id="boostBannerText">BOOST READY</span>
+      </div>
+    </div>
+  </div>
+
+  <div id="joystickZone">
+    <div id="joystickKnob"></div>
+  </div>
+
+  <!-- PASSCODE AUTHENTICATION MODAL -->
+  <div id="passcodeModal" class="fixed inset-0 bg-black/80 backdrop-blur-md z-50 hidden flex items-center justify-center p-4">
+    <div class="glass-panel p-6 rounded-2xl max-w-sm w-full text-center border-pink-500/50">
+      <h2 class="font-orbitron font-bold text-xl text-pink-400 mb-2">SECURITY VERIFICATION</h2>
+      <p class="text-xs text-gray-300 mb-4">Enter security passcode to unlock developer tools and open the secret vault passage.</p>
+      
+      <input type="password" id="passcodeInput" maxlength="4" placeholder="••••" class="w-full text-center tracking-widest text-2xl font-orbitron bg-black/60 border border-pink-500/50 rounded-xl py-3 text-pink-300 focus:outline-none mb-4">
+      
+      <div class="flex gap-2">
+        <button onclick="closePasscodeModal()" class="w-1/2 py-3 rounded-xl bg-gray-800 font-bold text-xs text-gray-300 hover:bg-gray-700">CANCEL</button>
+        <button onclick="verifyAdminCode()" class="w-1/2 py-3 rounded-xl neon-btn font-bold text-xs text-white">AUTHENTICATE</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- EXPANDED COMPREHENSIVE ADMIN STUDIO PANEL -->
+  <div id="adminPanel" class="fixed right-4 top-12 bottom-12 w-96 glass-panel rounded-2xl z-40 hidden flex-col p-4 border-purple-500/60 shadow-2xl overflow-hidden">
+    <!-- Studio Header -->
+    <div class="flex justify-between items-center mb-3 border-b border-white/10 pb-2">
+      <div class="flex items-center gap-2">
+        <i class="fa-solid fa-sliders text-pink-400"></i>
+        <h3 class="font-orbitron font-bold text-pink-400 text-sm">ADMIN STUDIO PRO</h3>
+      </div>
+      <button onclick="toggleAdminPanel()" class="text-gray-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
+    </div>
+
+    <!-- Real-time Diagnostics Bar -->
+    <div class="grid grid-cols-4 gap-1 p-2 bg-black/50 rounded-xl border border-white/5 mb-3 text-[10px] font-orbitron text-gray-300 text-center">
+      <div>
+        <div class="text-gray-500">FPS</div>
+        <div id="diagFps" class="text-green-400 font-bold">60</div>
+      </div>
+      <div>
+        <div class="text-gray-500">BOTS</div>
+        <div id="diagBots" class="text-cyan-400 font-bold">0</div>
+      </div>
+      <div>
+        <div class="text-gray-500">FOOD</div>
+        <div id="diagFood" class="text-yellow-400 font-bold">0</div>
+      </div>
+      <div>
+        <div class="text-gray-500">POS</div>
+        <div id="diagPos" class="text-pink-400 font-bold">0,0</div>
+      </div>
+    </div>
+
+    <!-- Category Tabs Navigation -->
+    <div class="flex border-b border-white/10 mb-3 text-xs font-orbitron font-bold">
+      <button onclick="switchAdminTab('player')" id="tabBtn-player" class="flex-1 py-2 text-center text-gray-400 admin-tab-active transition">PLAYER</button>
+      <button onclick="switchAdminTab('world')" id="tabBtn-world" class="flex-1 py-2 text-center text-gray-400 transition">WORLD</button>
+      <button onclick="switchAdminTab('vault')" id="tabBtn-vault" class="flex-1 py-2 text-center text-gray-400 transition">VAULT</button>
+      <button onclick="switchAdminTab('chaos')" id="tabBtn-chaos" class="flex-1 py-2 text-center text-gray-400 transition">CHAOS</button>
+    </div>
+
+    <!-- Tab Contents Container -->
+    <div class="flex-1 overflow-y-auto pr-1 space-y-3 text-xs font-semibold">
+      
+      <!-- TAB 1: PLAYER MODIFIERS -->
+      <div id="tabContent-player" class="space-y-3">
+        <div class="flex justify-between items-center p-2.5 bg-black/40 rounded-xl border border-white/5">
+          <span>God Mode (Invincible)</span>
+          <input type="checkbox" id="godModeToggle" onchange="toggleGodMode(this.checked)" class="w-5 h-5 accent-pink-500 cursor-pointer">
+        </div>
+
+        <div>
+          <div class="flex justify-between text-gray-300 mb-1">
+            <span>Hole Radius Scale</span>
+            <span id="sizeVal">1.0x</span>
+          </div>
+          <input type="range" min="0.5" max="15" step="0.5" value="1" oninput="setPlayerSizeMultiplier(this.value)" class="w-full accent-pink-500">
+          <button onclick="setMaxHoleSize()" class="w-full mt-1.5 py-1.5 rounded-lg bg-pink-900/40 hover:bg-pink-800/60 border border-pink-500/40 font-bold text-[10px] text-pink-300 uppercase">
+            <i class="fa-solid fa-up-right-and-down-left-from-center mr-1"></i> Instant Max Size (Giant Hole)
+          </button>
+        </div>
+
+        <div>
+          <div class="flex justify-between text-gray-300 mb-1">
+            <span>Movement Speed</span>
+            <span id="speedVal">1.0x</span>
+          </div>
+          <input type="range" min="0.5" max="5" step="0.5" value="1" oninput="setPlayerSpeedMultiplier(this.value)" class="w-full accent-cyan-400">
+        </div>
+
+        <div>
+          <div class="flex justify-between text-gray-300 mb-1">
+            <span>Devour Mass Multiplier</span>
+            <span id="massMultVal">1.0x</span>
+          </div>
+          <input type="range" min="1" max="10" step="1" value="1" oninput="setMassGainMultiplier(this.value)" class="w-full accent-purple-400">
+        </div>
+
+        <div class="p-2.5 bg-black/40 rounded-xl border border-white/5 flex justify-between items-center">
+          <span>Hole Neon Color</span>
+          <input type="color" id="holeColorPicker" value="#ff007f" onchange="changePlayerHoleColor(this.value)" class="w-8 h-8 rounded border-0 cursor-pointer bg-transparent">
+        </div>
+
+        <!-- Teleport Shortcuts -->
+        <div class="pt-1">
+          <div class="text-[10px] font-orbitron font-bold text-gray-400 uppercase mb-1.5">Teleport Shortcuts</div>
+          <div class="grid grid-cols-3 gap-1.5">
+            <button onclick="teleportTo(0, 0)" class="py-2 rounded-lg bg-gray-800 hover:bg-gray-700 text-white font-bold text-[10px] border border-gray-600">Center</button>
+            <button onclick="teleportTo(140, -150)" class="py-2 rounded-lg bg-purple-900/60 hover:bg-purple-800/80 text-purple-200 font-bold text-[10px] border border-purple-500/40">Vault Gate</button>
+            <button onclick="teleportTo(140, -480)" class="py-2 rounded-lg bg-yellow-900/60 hover:bg-yellow-800/80 text-yellow-200 font-bold text-[10px] border border-yellow-500/40">Rickroll Vault</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 2: WORLD & PHYSICS -->
+      <div id="tabContent-world" class="hidden space-y-3">
+        <div>
+          <div class="flex justify-between text-gray-300 mb-1">
+            <span>Time Dilation (Game Speed)</span>
+            <span id="timeScaleVal">1.0x</span>
+          </div>
+          <input type="range" min="0.2" max="3.0" step="0.2" value="1.0" oninput="setTimeDilation(this.value)" class="w-full accent-yellow-400">
+        </div>
+
+        <div>
+          <div class="flex justify-between text-gray-300 mb-1">
+            <span>Arena Friction / Drag</span>
+            <span id="dragVal">Normal</span>
+          </div>
+          <input type="range" min="0.2" max="2.0" step="0.2" value="1.0" oninput="setArenaDrag(this.value)" class="w-full accent-cyan-400">
+        </div>
+
+        <div class="grid grid-cols-2 gap-2 pt-1">
+          <button onclick="triggerFoodRain()" class="py-3 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs flex flex-col items-center justify-center gap-1 shadow-md">
+            <i class="fa-solid fa-cloud-showers-heavy text-base"></i> Food Rain (+150)
+          </button>
+          <button onclick="triggerSuperNovaFood()" class="py-3 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-xs flex flex-col items-center justify-center gap-1 shadow-md">
+            <i class="fa-solid fa-burst text-base"></i> Super Nova Blast
+          </button>
+        </div>
+
+        <button onclick="clearAllFoodPellets()" class="w-full py-2.5 rounded-xl bg-gray-800 hover:bg-gray-700 font-bold text-xs text-gray-300 border border-gray-600">
+          <i class="fa-solid fa-trash mr-1"></i> Clear All Food Pellets
+        </button>
+      </div>
+
+      <!-- TAB 3: SECRET VAULT OVERRIDES -->
+      <div id="tabContent-vault" class="hidden space-y-3">
+        <div class="flex justify-between items-center p-2.5 bg-black/40 rounded-xl border border-white/5">
+          <span>Secret Vault Gate</span>
+          <button onclick="toggleSecretDoor()" id="doorStateBtn" class="px-3 py-1 rounded bg-green-600 font-bold text-[10px] text-white">OPEN</button>
+        </div>
+
+        <div class="flex justify-between items-center p-2.5 bg-black/40 rounded-xl border border-white/5">
+          <span>Disable Security Lasers</span>
+          <input type="checkbox" id="lasersDisabledToggle" onchange="toggleSecurityLasers(this.checked)" class="w-5 h-5 accent-pink-500 cursor-pointer">
+        </div>
+
+        <div class="flex justify-between items-center p-2.5 bg-black/40 rounded-xl border border-white/5">
+          <span>Infinite Speed Boost Pads</span>
+          <input type="checkbox" id="infiniteBoostToggle" onchange="toggleInfiniteBoost(this.checked)" class="w-5 h-5 accent-cyan-400 cursor-pointer">
+        </div>
+
+        <button onclick="spawnVaultTrophyClones()" class="w-full py-2.5 rounded-xl bg-yellow-600 hover:bg-yellow-500 font-bold text-xs text-white shadow-md flex items-center justify-center gap-2">
+          <i class="fa-solid fa-compact-disc"></i> Spawn Trophy Clones & Disco
+        </button>
+      </div>
+
+      <!-- TAB 4: CHAOS ENGINE -->
+      <div id="tabContent-chaos" class="hidden space-y-3">
+        <!-- Devour Arena Nuke -->
+        <button onclick="triggerNukeAll()" class="w-full py-3.5 rounded-xl neon-btn-red font-orbitron font-black text-white tracking-wider text-sm flex items-center justify-center gap-2 shadow-lg">
+          <i class="fa-solid fa-radiation text-lg animate-pulse"></i> NUKE ALL (DEVOUR ARENA)
+        </button>
+
+        <div class="grid grid-cols-2 gap-2">
+          <button onclick="spawnBotSwarm()" class="py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs flex items-center justify-center gap-1 shadow-md">
+            <i class="fa-solid fa-robot"></i> Bot Swarm (+10)
+          </button>
+          <button onclick="triggerRickrollEvent()" class="py-2.5 rounded-xl bg-yellow-600 hover:bg-yellow-500 text-white font-bold text-xs flex items-center justify-center gap-1 shadow-md">
+            <i class="fa-solid fa-music"></i> Rickroll Beat
+          </button>
+        </div>
+
+        <div class="flex justify-between items-center p-2.5 bg-black/40 rounded-xl border border-white/5">
+          <span>Freeze All AI Opponents</span>
+          <input type="checkbox" id="freezeBotsToggle" onchange="toggleFreezeBots(this.checked)" class="w-5 h-5 accent-blue-500 cursor-pointer">
+        </div>
+
+        <div class="flex justify-between items-center p-2.5 bg-black/40 rounded-xl border border-white/5">
+          <span>Mass Draining Aura</span>
+          <input type="checkbox" id="massDrainToggle" onchange="toggleMassDrainAura(this.checked)" class="w-5 h-5 accent-purple-500 cursor-pointer">
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- TOAST NOTIFICATION OVERLAY -->
+  <div id="toastNotification" class="fixed top-6 left-1/2 -translate-x-1/2 glass-panel px-6 py-3 rounded-full z-50 text-xs font-orbitron font-bold text-pink-300 border-pink-500/50 hidden transition-all duration-300 shadow-xl flex items-center gap-2">
+    <i class="fa-solid fa-bell text-pink-400"></i>
+    <span id="toastText">Welcome to Hole Slither IO!</span>
+  </div>
+
+  <script>
+    const ARENA_SIZE = 400;
+    let scene, camera, renderer;
+    let player = {
+      mesh: null,
+      radius: 2.5,
+      mass: 1.0,
+      x: 0,
+      z: 0,
+      speed: 0.6,
+      speedBoost: 1.0,
+      name: "CyberHole",
+      color: 0xff007f
+    };
+
+    let bots = [];
+    let foodPellets = [];
+    let speedBoosts = [];
+    let audioCtx;
+    
+    // Game & Admin State
+    let isGameRunning = false;
+    let isAdmin = false;
+    let isGodMode = false;
+    let playerSizeMult = 1.0;
+    let playerSpeedMult = 1.0;
+    let massGainMult = 1.0;
+    let timeDilation = 1.0;
+    let arenaDrag = 1.0;
+    let secretDoorOpen = true;
+    let lasersDisabled = false;
+    let infiniteBoost = false;
+    let freezeBots = false;
+    let massDrainAura = false;
+
+    let rickrollTimeSeconds = 180;
+    let timerInterval = null;
+
+    // Control Inputs
+    const keys = {};
+    const mousePos = { x: 0, z: 0 };
+    let joystickVector = { x: 0, z: 0 };
+
+    // Diagnostics & FPS Counter
+    let frameCount = 0;
+    let lastFpsTime = performance.now();
+    let currentFps = 60;
+
+    // Mini-map Radar Sweep
+    let radarAngle = 0;
+
+    // Networking / Sync
+    let broadcastChannel;
+    let roomCode = "SYNTH-84";
+    let myClientId = 'P_' + Math.random().toString(36).substring(2, 7);
+    let remotePlayers = {};
+
+    function initThreeScene() {
+      const container = document.getElementById('gameCanvas');
+      scene = new THREE.Scene();
+      scene.background = new THREE.Color(0x050010);
+      scene.fog = new THREE.FogExp2(0x050010, 0.0025);
+
+      camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+      camera.position.set(0, 35, 30);
+      camera.lookAt(0, 0, 0);
+
+      renderer = new THREE.WebGLRenderer({ canvas: container, antialias: true });
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      renderer.shadowMap.enabled = true;
+
+      // Lights
+      const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+      scene.add(ambientLight);
+
+      const dirLight = new THREE.DirectionalLight(0xff00aa, 1.2);
+      dirLight.position.set(100, 150, 50);
+      dirLight.castShadow = true;
+      scene.add(dirLight);
+
+      // Arena Ground & Grid Texture
+      const gridHelper = new THREE.GridHelper(ARENA_SIZE, 80, 0xff007f, 0x220044);
+      gridHelper.position.y = -0.1;
+      scene.add(gridHelper);
+
+      // Arena Boundary Walls
+      buildArenaBoundaries();
+
+      // Underground Labyrinth
+      buildExpandedUndergroundLabyrinth();
+
+      // Player Hole Initialization
+      createPlayerHole();
+
+      // Initial Food Population
+      spawnInitialFood(250);
+
+      // Initial Bot Population
+      spawnBots(8);
+
+      // Window Resize Listener
+      window.addEventListener('resize', onWindowResize);
+    }
+
+    function buildArenaBoundaries() {
+      const wallMat = new THREE.MeshPhongMaterial({ color: 0xff00aa, wireframe: true, transparent: true, opacity: 0.4 });
+      const wallGeo = new THREE.BoxGeometry(ARENA_SIZE, 20, 2);
+
+      // Outer Walls
+      const wallN = new THREE.Mesh(wallGeo, wallMat); wallN.position.set(0, 10, -ARENA_SIZE/2); scene.add(wallN);
+      const wallS = new THREE.Mesh(wallGeo, wallMat); wallS.position.set(0, 10, ARENA_SIZE/2); scene.add(wallS);
+      const wallE = new THREE.Mesh(wallGeo, wallMat); wallE.rotation.y = Math.PI/2; wallE.position.set(ARENA_SIZE/2, 10, 0); scene.add(wallE);
+      const wallW = new THREE.Mesh(wallGeo, wallMat); wallW.rotation.y = Math.PI/2; wallW.position.set(-ARENA_SIZE/2, 10, 0); scene.add(wallW);
+
+      // NW Vault Door
+      const doorGeo = new THREE.BoxGeometry(30, 25, 4);
+      const doorMat = new THREE.MeshPhongMaterial({ color: 0x00f2fe, emissive: 0x0088aa, wireframe: true });
+      const door = new THREE.Mesh(doorGeo, doorMat);
+      door.position.set(140, 12.5, -150);
+      door.name = "AdminDoor";
+      scene.add(door);
+    }
+
+    function buildExpandedUndergroundLabyrinth() {
+      const labyrinthGroup = new THREE.Group();
+      labyrinthGroup.name = "UndergroundLabyrinth";
+
+      // SECTOR 1: NEON LASER TUNNEL (x: 140, z: -150 to -250, y: -25)
+      const sec1Geo = new THREE.BoxGeometry(40, 25, 120);
+      const sec1Mat = new THREE.MeshPhongMaterial({ color: 0x0a0015, side: THREE.BackSide });
+      const sector1 = new THREE.Mesh(sec1Geo, sec1Mat);
+      sector1.position.set(140, -25, -200);
+      labyrinthGroup.add(sector1);
+
+      // Speed Boost Strips
+      for(let i = -40; i <= 40; i += 20) {
+        const stripGeo = new THREE.PlaneGeometry(16, 8);
+        const stripMat = new THREE.MeshBasicMaterial({ color: 0x00ffff, side: THREE.DoubleSide });
+        const strip = new THREE.Mesh(stripGeo, stripMat);
+        strip.rotation.x = -Math.PI / 2;
+        strip.position.set(140, -37.4, -200 + i);
+        labyrinthGroup.add(strip);
+        speedBoosts.push({ pos: strip.position, radius: 10 });
+      }
+
+      // SECTOR 2: CYBER ARCADE & SYNTH CITY (x: 140, z: -320, y: -35)
+      const sec2Geo = new THREE.BoxGeometry(140, 50, 140);
+      const sec2Mat = new THREE.MeshPhongMaterial({ color: 0x050010, side: THREE.BackSide });
+      const sector2 = new THREE.Mesh(sec2Geo, sec2Mat);
+      sector2.position.set(140, -35, -330);
+      labyrinthGroup.add(sector2);
+
+      // Wireframe Skyscrapers & Arcade Cabinets
+      for(let k = 0; k < 6; k++) {
+        const bHeight = 30 + Math.random() * 25;
+        const bGeo = new THREE.BoxGeometry(15, bHeight, 15);
+        const bWire = new THREE.WireframeGeometry(bGeo);
+        const bMat = new THREE.LineBasicMaterial({ color: 0x00f0ff });
+        const bBuilding = new THREE.LineSegments(bWire, bMat);
+        const angle = (k / 6) * Math.PI * 2;
+        bBuilding.position.set(140 + Math.cos(angle)*40, -60 + bHeight/2, -330 + Math.sin(angle)*40);
+        labyrinthGroup.add(bBuilding);
+      }
+
+      // Central Spinning Crystal Matrix Cluster
+      const crystalGeo = new THREE.OctahedronGeometry(8, 0);
+      const crystalMat = new THREE.MeshPhongMaterial({ color: 0x00ffff, wireframe: true, emissive: 0x008888 });
+      const crystalCluster = new THREE.Mesh(crystalGeo, crystalMat);
+      crystalCluster.position.set(140, -25, -330);
+      crystalCluster.name = "CrystalCluster";
+      labyrinthGroup.add(crystalCluster);
+
+      // SECTOR 3: DEEP VAULT SANCTUM (x: 140, z: -480, y: -50)
+      const sec3Geo = new THREE.CylinderGeometry(90, 90, 70, 32, 1, true);
+      const sec3Mat = new THREE.MeshPhongMaterial({ color: 0x020005, side: THREE.BackSide });
+      const sector3 = new THREE.Mesh(sec3Geo, sec3Mat);
+      sector3.position.set(140, -50, -480);
+      labyrinthGroup.add(sector3);
+
+      // Golden Rickroll Vinyl Trophy
+      const pedestalGeo = new THREE.CylinderGeometry(10, 12, 18, 16);
+      const pedestalMat = new THREE.MeshPhongMaterial({ color: 0x222222 });
+      const pedestal = new THREE.Mesh(pedestalGeo, pedestalMat);
+      pedestal.position.set(140, -76, -480);
+      labyrinthGroup.add(pedestal);
+
+      const vinylGeo = new THREE.CylinderGeometry(8, 8, 0.5, 32);
+      const vinylMat = new THREE.MeshStandardMaterial({ color: 0xffd700, metalness: 0.9, roughness: 0.1 });
+      const trophyVinyl = new THREE.Mesh(vinylGeo, vinylMat);
+      trophyVinyl.position.set(140, -65, -480);
+      trophyVinyl.rotation.x = 0.3;
+      trophyVinyl.name = "RickrollTrophy";
+      labyrinthGroup.add(trophyVinyl);
+
+      // High Yield Vault Diamond & Quantum Orbs
+      spawnVaultOrbs(labyrinthGroup);
+
+      scene.add(labyrinthGroup);
+    }
+
+    function spawnVaultOrbs(parentGroup) {
+      for (let i = 0; i < 35; i++) {
+        const radius = 10 + Math.random() * 50;
+        const angle = Math.random() * Math.PI * 2;
+        const px = 140 + Math.cos(angle) * radius;
+        const pz = -480 + Math.sin(angle) * radius;
+        
+        const isQuantum = Math.random() > 0.5;
+        const lootGeo = isQuantum ? new THREE.IcosahedronGeometry(2.2) : new THREE.OctahedronGeometry(2);
+        const lootMat = new THREE.MeshPhongMaterial({
+          color: isQuantum ? 0x00ffff : 0xffd700,
+          emissive: isQuantum ? 0x008888 : 0x886600,
+          shininess: 100
+        });
+        const loot = new THREE.Mesh(lootGeo, lootMat);
+        loot.position.set(px, -83, pz);
+        loot.userData = { massValue: isQuantum ? 5.0 : 3.0, type: 'vaultLoot' };
+        parentGroup.add(loot);
+        foodPellets.push(loot);
+      }
+    }
+
+    function createPlayerHole() {
+      const holeGroup = new THREE.Group();
+
+      // Outer Glow Ring
+      const ringGeo = new THREE.RingGeometry(player.radius, player.radius + 0.6, 32);
+      const ringMat = new THREE.MeshBasicMaterial({ color: player.color, side: THREE.DoubleSide });
+      const ringMesh = new THREE.Mesh(ringGeo, ringMat);
+      ringMesh.rotation.x = -Math.PI / 2;
+      ringMesh.position.y = 0.05;
+      ringMesh.name = "HoleRingMesh";
+      holeGroup.add(ringMesh);
+
+      // Black Void Pit Cylinder
+      const pitGeo = new THREE.CylinderGeometry(player.radius, player.radius * 0.9, 10, 32);
+      const pitMat = new THREE.MeshBasicMaterial({ color: 0x000000 });
+      const pitMesh = new THREE.Mesh(pitGeo, pitMat);
+      pitMesh.position.y = -5;
+      holeGroup.add(pitMesh);
+
+      holeGroup.position.set(0, 0, 0);
+      scene.add(holeGroup);
+      player.mesh = holeGroup;
+    }
+
+    function spawnInitialFood(count) {
+      const colors = [0xff007f, 0x00f2fe, 0x7928ca, 0xffb199, 0x00ff88, 0xffd700];
+      const geo = new THREE.SphereGeometry(1.0, 12, 12);
+
+      for (let i = 0; i < count; i++) {
+        const mat = new THREE.MeshPhongMaterial({
+          color: colors[Math.floor(Math.random() * colors.length)],
+          emissive: 0x222222
+        });
+        const food = new THREE.Mesh(geo, mat);
+        food.position.set(
+          (Math.random() - 0.5) * (ARENA_SIZE - 20),
+          0.8,
+          (Math.random() - 0.5) * (ARENA_SIZE - 20)
+        );
+        food.userData = { massValue: 0.15, type: 'standard' };
+        scene.add(food);
+        foodPellets.push(food);
+      }
+    }
+
+    function spawnBots(count) {
+      const botNames = ["GlitchBot", "NeonVortex", "CyberPhantasm", "QuantumHole", "SynthRider", "ByteDevourer"];
+      for (let i = 0; i < count; i++) {
+        const radius = 2.0 + Math.random() * 1.5;
+        const botGroup = new THREE.Group();
+
+        const ringGeo = new THREE.RingGeometry(radius, radius + 0.5, 32);
+        const ringMat = new THREE.MeshBasicMaterial({ color: 0x00f2fe, side: THREE.DoubleSide });
+        const ring = new THREE.Mesh(ringGeo, ringMat);
+        ring.rotation.x = -Math.PI / 2;
+        ring.position.y = 0.05;
+        botGroup.add(ring);
+
+        const pitGeo = new THREE.CylinderGeometry(radius, radius * 0.9, 10, 32);
+        const pitMat = new THREE.MeshBasicMaterial({ color: 0x000000 });
+        const pit = new THREE.Mesh(pitGeo, pitMat);
+        pit.position.y = -5;
+        botGroup.add(pit);
+
+        const bx = (Math.random() - 0.5) * (ARENA_SIZE - 40);
+        const bz = (Math.random() - 0.5) * (ARENA_SIZE - 40);
+        botGroup.position.set(bx, 0, bz);
+
+        scene.add(botGroup);
+
+        bots.push({
+          mesh: botGroup,
+          name: botNames[i % botNames.length] + "_" + Math.floor(Math.random()*100),
+          radius: radius,
+          mass: radius * 0.5,
+          targetX: bx,
+          targetZ: bz
+        });
+      }
+    }
+
+    function setupControls() {
+      window.addEventListener('keydown', (e) => {
+        keys[e.key.toLowerCase()] = true;
+        if (e.key.toLowerCase() === 'p' || e.key === 'Escape') {
+          openPasscodeModal();
+        }
+      });
+
+      window.addEventListener('keyup', (e) => {
+        keys[e.key.toLowerCase()] = false;
+      });
+
+      window.addEventListener('mousemove', (e) => {
+        if (!isGameRunning) return;
+        const vec = new THREE.Vector3(
+          (e.clientX / window.innerWidth) * 2 - 1,
+          -(e.clientY / window.innerHeight) * 2 + 1,
+          0.5
+        );
+        vec.unproject(camera);
+        const dir = vec.sub(camera.position).normalize();
+        const distance = -camera.position.y / dir.y;
+        const pos = camera.position.clone().add(dir.multiplyScalar(distance));
+        mousePos.x = pos.x;
+        mousePos.z = pos.z;
+      });
+
+      setupTouchControls();
+    }
+
+    function setupTouchControls() {
+      const zone = document.getElementById('joystickZone');
+      const knob = document.getElementById('joystickKnob');
+      let touchId = null;
+
+      window.addEventListener('touchstart', (e) => {
+        if (!isGameRunning) return;
+        const touch = e.touches[0];
+        zone.style.display = 'block';
+        zone.style.left = `${touch.clientX - 60}px`;
+        zone.style.top = `${touch.clientY - 60}px`;
+        touchId = touch.identifier;
+      });
+
+      window.addEventListener('touchmove', (e) => {
+        if (touchId === null) return;
+        for (let t of e.changedTouches) {
+          if (t.identifier === touchId) {
+            const rect = zone.getBoundingClientRect();
+            const dx = t.clientX - (rect.left + 60);
+            const dy = t.clientY - (rect.top + 60);
+            const dist = Math.min(Math.hypot(dx, dy), 50);
+            const angle = Math.atan2(dy, dx);
+
+            knob.style.left = `${35 + Math.cos(angle) * dist}px`;
+            knob.style.top = `${35 + Math.sin(angle) * dist}px`;
+
+            joystickVector.x = (Math.cos(angle) * dist) / 50;
+            joystickVector.z = (Math.sin(angle) * dist) / 50;
+          }
+        }
+      });
+
+      window.addEventListener('touchend', () => {
+        zone.style.display = 'none';
+        joystickVector.x = 0;
+        joystickVector.z = 0;
+        touchId = null;
+      });
+    }
+
+    function animate() {
+      requestAnimationFrame(animate);
+
+      // FPS Diagnostics
+      frameCount++;
+      const now = performance.now();
+      if (now - lastFpsTime >= 1000) {
+        currentFps = Math.round((frameCount * 1000) / (now - lastFpsTime));
+        frameCount = 0;
+        lastFpsTime = now;
+        updateDiagnostics();
+      }
+
+      if (isGameRunning) {
+        updatePlayerMovement();
+        if (!freezeBots) updateBotsLogic();
+        updateCollisionsAndFood();
+        if (massDrainAura) applyMassDrainAuraLogic();
+        updateCameraPosition();
+        updateLeaderboard();
+        updateLabyrinthAnimations();
+        syncMultiplayerState();
+        updateMinimap();
+      }
+
+      renderer.render(scene, camera);
+    }
+
+    function updateDiagnostics() {
+      if (!isAdmin) return;
+      document.getElementById('diagFps').innerText = currentFps;
+      document.getElementById('diagBots').innerText = bots.length;
+      document.getElementById('diagFood').innerText = foodPellets.length;
+      document.getElementById('diagPos').innerText = `${Math.round(player.x)},${Math.round(player.z)}`;
+    }
+
+    function updateMinimap() {
+      const canvas = document.getElementById('minimapCanvas');
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+      const w = canvas.width;
+      const h = canvas.height;
+      const center = w / 2;
+
+      // Clear Canvas
+      ctx.clearRect(0, 0, w, h);
+
+      // Radar Background & Grid
+      ctx.fillStyle = 'rgba(5, 2, 15, 0.95)';
+      ctx.fillRect(0, 0, w, h);
+
+      // Grid Rings
+      ctx.strokeStyle = 'rgba(0, 242, 254, 0.15)';
+      ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.arc(center, center, center * 0.35, 0, Math.PI * 2); ctx.stroke();
+      ctx.beginPath(); ctx.arc(center, center, center * 0.7, 0, Math.PI * 2); ctx.stroke();
+
+      // Crosshair Lines
+      ctx.beginPath();
+      ctx.moveTo(center, 0); ctx.lineTo(center, h);
+      ctx.moveTo(0, center); ctx.lineTo(w, center);
+      ctx.stroke();
+
+      // World to Radar Map Scale Factor
+      const scale = (w * 0.8) / ARENA_SIZE;
+
+      function worldToRadar(wx, wz) {
+        return {
+          rx: center + wx * scale,
+          ry: center + wz * scale
+        };
+      }
+
+      // Draw NW Secret Passage Corridor
+      const vaultEntrance = worldToRadar(140, -150);
+      const vaultSanctum = worldToRadar(140, -480);
+
+      ctx.strokeStyle = 'rgba(255, 0, 200, 0.6)';
+      ctx.lineWidth = 2;
+      ctx.setLineDash([2, 2]);
+      ctx.beginPath();
+      ctx.moveTo(vaultEntrance.rx, vaultEntrance.ry);
+      ctx.lineTo(vaultSanctum.rx, vaultSanctum.ry);
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      // Entrance Gate Marker
+      ctx.fillStyle = '#00f2fe';
+      ctx.beginPath();
+      ctx.arc(vaultEntrance.rx, vaultEntrance.ry, 3, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Vault Star Icon (Rickroll Trophy Sanctum)
+      ctx.fillStyle = '#ffd700';
+      ctx.shadowColor = '#ffd700';
+      ctx.shadowBlur = 6;
+      ctx.beginPath();
+      ctx.arc(vaultSanctum.rx, vaultSanctum.ry, 4, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.shadowBlur = 0;
+
+      // Draw Bots & Remote Players
+      bots.forEach(bot => {
+        const p = worldToRadar(bot.mesh.position.x, bot.mesh.position.z);
+        const size = Math.max(2, Math.min(6, bot.radius * 0.8));
+        ctx.fillStyle = '#ff0055';
+        ctx.shadowColor = '#ff0055';
+        ctx.shadowBlur = 4;
+        ctx.beginPath();
+        ctx.arc(p.rx, p.ry, size, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.shadowBlur = 0;
+      });
+
+      Object.values(remotePlayers).forEach(rMesh => {
+        const p = worldToRadar(rMesh.position.x, rMesh.position.z);
+        ctx.fillStyle = '#7928ca';
+        ctx.shadowColor = '#7928ca';
+        ctx.shadowBlur = 4;
+        ctx.beginPath();
+        ctx.arc(p.rx, p.ry, 4, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.shadowBlur = 0;
+      });
+
+      // Radar Scanning Beam Effect
+      radarAngle += 0.04;
+      ctx.save();
+      ctx.translate(center, center);
+      ctx.rotate(radarAngle);
+      const sweepGrad = ctx.createRadialGradient(0, 0, 0, 0, 0, center);
+      sweepGrad.addColorStop(0, 'rgba(0, 242, 254, 0.3)');
+      sweepGrad.addColorStop(1, 'rgba(0, 242, 254, 0.0)');
+      ctx.fillStyle = sweepGrad;
+      ctx.beginPath();
+      ctx.moveTo(0, 0);
+      ctx.arc(0, 0, center, 0, Math.PI / 3);
+      ctx.closePath();
+      ctx.fill();
+      ctx.restore();
+
+      // Draw Player 1 (You)
+      const p1 = worldToRadar(player.x, player.z);
+      const p1Size = Math.max(3.5, Math.min(8, player.radius * playerSizeMult * 0.8));
+
+      ctx.fillStyle = '#00ff88';
+      ctx.shadowColor = '#00ff88';
+      ctx.shadowBlur = 8;
+      ctx.beginPath();
+      ctx.arc(p1.rx, p1.ry, p1Size, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.arc(p1.rx, p1.ry, p1Size + 1.5, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.shadowBlur = 0;
+    }
+
+    function updatePlayerMovement() {
+      let moveX = 0;
+      let moveZ = 0;
+
+      // Keyboard Controls
+      if (keys['w'] || keys['arrowup']) moveZ -= 1;
+      if (keys['s'] || keys['arrowdown']) moveZ += 1;
+      if (keys['a'] || keys['arrowleft']) moveX -= 1;
+      if (keys['d'] || keys['arrowright']) moveX += 1;
+
+      // Mouse Controls Override
+      if (moveX === 0 && moveZ === 0 && (mousePos.x !== 0 || mousePos.z !== 0)) {
+        const dx = mousePos.x - player.x;
+        const dz = mousePos.z - player.z;
+        const dist = Math.hypot(dx, dz);
+        if (dist > 1.5) {
+          moveX = dx / dist;
+          moveZ = dz / dist;
+        }
+      }
+
+      // Joystick Override
+      if (joystickVector.x !== 0 || joystickVector.z !== 0) {
+        moveX = joystickVector.x;
+        moveZ = joystickVector.z;
+      }
+
+      // Apply Speed & Multipliers
+      const effectiveBoost = infiniteBoost ? 3.0 : player.speedBoost;
+      const totalSpeed = player.speed * effectiveBoost * playerSpeedMult * (1.0 / arenaDrag) * timeDilation;
+      
+      player.x += moveX * totalSpeed;
+      player.z += moveZ * totalSpeed;
+
+      // Bounds Clamping (unless inside secret door passage)
+      if (player.z > -145 || !secretDoorOpen) {
+        const limit = ARENA_SIZE / 2 - player.radius;
+        player.x = Math.max(-limit, Math.min(limit, player.x));
+        player.z = Math.max(-limit, Math.min(limit, player.z));
+      }
+
+      player.mesh.position.set(player.x, 0, player.z);
+
+      // Speed Boost pads collision in tunnel
+      speedBoosts.forEach(boost => {
+        if (player.mesh.position.distanceTo(boost.pos) < boost.radius) {
+          player.speedBoost = 2.5;
+          document.getElementById('boostBannerText').innerText = "TURBO BOOST!";
+          setTimeout(() => { 
+            player.speedBoost = 1.0; 
+            document.getElementById('boostBannerText').innerText = "BOOST READY";
+          }, 1500);
+        }
+      });
+    }
+
+    function updateBotsLogic() {
+      bots.forEach(bot => {
+        const dx = bot.targetX - bot.mesh.position.x;
+        const dz = bot.targetZ - bot.mesh.position.z;
+        const dist = Math.hypot(dx, dz);
+
+        if (dist < 3 || Math.random() < 0.02) {
+          bot.targetX = (Math.random() - 0.5) * (ARENA_SIZE - 40);
+          bot.targetZ = (Math.random() - 0.5) * (ARENA_SIZE - 40);
+        } else {
+          bot.mesh.position.x += (dx / dist) * 0.35 * timeDilation;
+          bot.mesh.position.z += (dz / dist) * 0.35 * timeDilation;
+        }
+      });
+    }
+
+    function updateCollisionsAndFood() {
+      // Devour Food
+      for (let i = foodPellets.length - 1; i >= 0; i--) {
+        const food = foodPellets[i];
+        const dist = player.mesh.position.distanceTo(food.position);
+
+        if (dist < player.radius * playerSizeMult) {
+          scene.remove(food);
+          player.mass += food.userData.massValue * massGainMult;
+          growPlayerHole();
+          foodPellets.splice(i, 1);
+          playDevourSound();
+        }
+      }
+
+      // Respawn standard food if low
+      if (foodPellets.length < 150) {
+        spawnInitialFood(50);
+      }
+
+      // Devour Bots
+      for (let i = bots.length - 1; i >= 0; i--) {
+        const bot = bots[i];
+        const dist = player.mesh.position.distanceTo(bot.mesh.position);
+        
+        if (dist < player.radius * playerSizeMult && (player.mass * playerSizeMult > bot.mass || isGodMode)) {
+          scene.remove(bot.mesh);
+          player.mass += bot.mass * massGainMult;
+          growPlayerHole();
+          bots.splice(i, 1);
+          showNotification(`DEVOUR: Ate ${bot.name}!`);
+          setTimeout(() => spawnBots(1), 5000);
+        }
+      }
+    }
+
+    function applyMassDrainAuraLogic() {
+      bots.forEach(bot => {
+        const dist = player.mesh.position.distanceTo(bot.mesh.position);
+        if (dist < 40 && bot.mass > 0.2) {
+          bot.mass -= 0.05;
+          player.mass += 0.05;
+          growPlayerHole();
+        }
+      });
+    }
+
+    function growPlayerHole() {
+      player.radius = 2.5 + Math.log(player.mass + 1) * 1.2;
+      const currentScale = (player.radius / 2.5) * playerSizeMult;
+      player.mesh.scale.set(currentScale, 1, currentScale);
+
+      document.getElementById('hudMass').innerText = `${player.mass.toFixed(1)} m`;
+    }
+
+    function updateCameraPosition() {
+      const targetCamY = 35 + player.radius * 2.5;
+      const targetCamZ = player.z + 30 + player.radius * 2;
+
+      camera.position.x += (player.x - camera.position.x) * 0.1;
+      camera.position.y += (targetCamY - camera.position.y) * 0.1;
+      camera.position.z += (targetCamZ - camera.position.z) * 0.1;
+      camera.lookAt(player.x, 0, player.z);
+    }
+
+    function updateLabyrinthAnimations() {
+      const crystal = scene.getObjectByName("CrystalCluster");
+      if (crystal) {
+        crystal.rotation.x += 0.01;
+        crystal.rotation.y += 0.015;
+      }
+
+      const trophy = scene.getObjectByName("RickrollTrophy");
+      if (trophy) {
+        trophy.rotation.y += 0.02;
+      }
+    }
+
+    function updateLeaderboard() {
+      const list = document.getElementById('leaderboardList');
+      const allEntries = [
+        { name: player.name + " (You)", mass: player.mass * playerSizeMult },
+        ...bots.map(b => ({ name: b.name, mass: b.mass }))
+      ].sort((a, b) => b.mass - a.mass);
+
+      list.innerHTML = allEntries.slice(0, 5).map((entry, idx) => `
+        <div class="flex justify-between items-center ${idx === 0 ? 'text-yellow-400 font-bold' : 'text-gray-300'}">
+          <span>${idx + 1}. ${entry.name}</span>
+          <span>${entry.mass.toFixed(1)}m</span>
+        </div>
+      `).join('');
+
+      document.getElementById('playerCountLabel').innerText = `${allEntries.length} In Arena`;
+    }
+
+    function switchAdminTab(tabName) {
+      ['player', 'world', 'vault', 'chaos'].forEach(t => {
+        document.getElementById(`tabContent-${t}`).classList.add('hidden');
+        document.getElementById(`tabBtn-${t}`).classList.remove('admin-tab-active');
+      });
+      document.getElementById(`tabContent-${tabName}`).classList.remove('hidden');
+      document.getElementById(`tabBtn-${tabName}`).classList.add('admin-tab-active');
+    }
+
+    function triggerNukeAll() {
+      if (!isAdmin) return;
+      showNotification("NUCLEAR BLAST: DEVOURING ALL ARENA MASS!");
+
+      const shockGeo = new THREE.RingGeometry(1, 200, 64);
+      const shockMat = new THREE.MeshBasicMaterial({ color: 0xff0044, side: THREE.DoubleSide, transparent: true, opacity: 0.8 });
+      const shockwave = new THREE.Mesh(shockGeo, shockMat);
+      shockwave.rotation.x = -Math.PI / 2;
+      shockwave.position.set(player.x, 0.5, player.z);
+      scene.add(shockwave);
+
+      foodPellets.forEach(f => {
+        player.mass += f.userData.massValue * massGainMult;
+        scene.remove(f);
+      });
+      foodPellets = [];
+
+      bots.forEach(b => {
+        player.mass += b.mass * massGainMult;
+        scene.remove(b.mesh);
+      });
+      bots = [];
+
+      growPlayerHole();
+
+      let opacity = 0.8;
+      const fadeInterval = setInterval(() => {
+        opacity -= 0.05;
+        shockwave.material.opacity = opacity;
+        shockwave.scale.addScalar(0.2);
+        if (opacity <= 0) {
+          clearInterval(fadeInterval);
+          scene.remove(shockwave);
+        }
+      }, 30);
+
+      playDevourSound();
+      setTimeout(() => spawnBots(6), 8000);
+    }
+
+    function toggleGodMode(val) {
+      isGodMode = val;
+      showNotification(`God Mode: ${val ? 'ENABLED' : 'DISABLED'}`);
+    }
+
+    function setMaxHoleSize() {
+      setPlayerSizeMultiplier(15);
+      showNotification("ADMIN: INSTANT MAX HOLE RADIUS!");
+    }
+
+    function setPlayerSizeMultiplier(val) {
+      playerSizeMult = parseFloat(val);
+      document.getElementById('sizeVal').innerText = `${val}x`;
+      growPlayerHole();
+    }
+
+    function setPlayerSpeedMultiplier(val) {
+      playerSpeedMult = parseFloat(val);
+      document.getElementById('speedVal').innerText = `${val}x`;
+    }
+
+    function setMassGainMultiplier(val) {
+      massGainMult = parseFloat(val);
+      document.getElementById('massMultVal').innerText = `${val}x`;
+      showNotification(`Mass Gain: ${val}x`);
+    }
+
+    function changePlayerHoleColor(hex) {
+      player.color = parseInt(hex.replace('#', '0x'));
+      const ring = player.mesh.getObjectByName("HoleRingMesh");
+      if (ring) ring.material.color.setHex(player.color);
+      showNotification("Hole Neon Color Updated");
+    }
+
+    function teleportTo(x, z) {
+      player.x = x;
+      player.z = z;
+      player.mesh.position.set(x, 0, z);
+      showNotification(`Teleported to (${x}, ${z})`);
+    }
+
+    function setTimeDilation(val) {
+      timeDilation = parseFloat(val);
+      document.getElementById('timeScaleVal').innerText = `${val}x`;
+    }
+
+    function setArenaDrag(val) {
+      arenaDrag = parseFloat(val);
+      document.getElementById('dragVal').innerText = val < 1 ? 'Floaty' : (val > 1 ? 'Heavy' : 'Normal');
+    }
+
+    function triggerFoodRain() {
+      spawnInitialFood(150);
+      showNotification("STUDIO: FOOD RAIN TRIGGERED!");
+    }
+
+    function triggerSuperNovaFood() {
+      for (let i = 0; i < 120; i++) {
+        const angle = (i / 120) * Math.PI * 2;
+        const dist = 10 + Math.random() * 80;
+        const geo = new THREE.SphereGeometry(1.2, 12, 12);
+        const mat = new THREE.MeshPhongMaterial({ color: 0x00f2fe, emissive: 0x00ffff });
+        const food = new THREE.Mesh(geo, mat);
+        food.position.set(player.x + Math.cos(angle) * dist, 0.8, player.z + Math.sin(angle) * dist);
+        food.userData = { massValue: 0.5, type: 'nova' };
+        scene.add(food);
+        foodPellets.push(food);
+      }
+      showNotification("SUPERNOVA BLAST: High-value food spawned!");
+    }
+
+    function clearAllFoodPellets() {
+      foodPellets.forEach(f => scene.remove(f));
+      foodPellets = [];
+      showNotification("Cleared all arena food pellets");
+    }
+
+    function toggleSecretDoor() {
+      secretDoorOpen = !secretDoorOpen;
+      const door = scene.getObjectByName("AdminDoor");
+      if (door) door.position.y = secretDoorOpen ? -20 : 12.5;
+      document.getElementById('doorStateBtn').innerText = secretDoorOpen ? 'OPEN' : 'LOCKED';
+      showNotification(`Secret Passage: ${secretDoorOpen ? 'UNLOCKED' : 'LOCKED'}`);
+    }
+
+    function toggleSecurityLasers(val) {
+      lasersDisabled = val;
+      showNotification(`Laser Security: ${val ? 'DISABLED' : 'ACTIVE'}`);
+    }
+
+    function toggleInfiniteBoost(val) {
+      infiniteBoost = val;
+      showNotification(`Infinite Boost: ${val ? 'ENABLED' : 'DISABLED'}`);
+    }
+
+    function spawnVaultTrophyClones() {
+      const vinylGeo = new THREE.CylinderGeometry(8, 8, 0.5, 32);
+      const vinylMat = new THREE.MeshStandardMaterial({ color: 0xff00ff, metalness: 0.8, roughness: 0.2 });
+      
+      for (let i = 0; i < 3; i++) {
+        const trophy = new THREE.Mesh(vinylGeo, vinylMat);
+        trophy.position.set(120 + i * 20, -65, -480);
+        trophy.rotation.x = 0.3;
+        scene.add(trophy);
+      }
+      showNotification("DISCO MODE: Cloned Vinyl Trophies Spawned!");
+    }
+
+    function spawnBotSwarm() {
+      spawnBots(10);
+      showNotification("BOT SWARM: Spawned 10 AI holes!");
+    }
+
+    function toggleFreezeBots(val) {
+      freezeBots = val;
+      showNotification(`AI Opponents: ${val ? 'FROZEN' : 'ACTIVE'}`);
+    }
+
+    function toggleMassDrainAura(val) {
+      massDrainAura = val;
+      showNotification(`Mass Drain Aura: ${val ? 'ENABLED' : 'DISABLED'}`);
+    }
+
+    function playDevourSound() {
+      try {
+        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(300 + Math.random() * 200, audioCtx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(100, audioCtx.currentTime + 0.15);
+        gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.15);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.15);
+      } catch (e) {}
+    }
+
+    function startRickrollCountdown() {
+      if (timerInterval) clearInterval(timerInterval);
+      timerInterval = setInterval(() => {
+        rickrollTimeSeconds--;
+        const mins = Math.floor(rickrollTimeSeconds / 60).toString().padStart(2, '0');
+        const secs = (rickrollTimeSeconds % 60).toString().padStart(2, '0');
+        document.getElementById('rickrollTimer').innerText = `${mins}:${secs}`;
+
+        if (rickrollTimeSeconds <= 0) {
+          triggerRickrollEvent();
+          rickrollTimeSeconds = 180;
+        }
+      }, 1000);
+    }
+
+    function triggerRickrollEvent() {
+      showNotification("🎶 NEVER GONNA GIVE YOU UP! RICKROLL ACTIVE! 🎶");
+      playRickrollSynthBeat();
+    }
+
+    function playRickrollSynthBeat() {
+      try {
+        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const notes = [261.63, 293.66, 329.63, 349.23, 392.00, 440.00];
+        notes.forEach((freq, idx) => {
+          setTimeout(() => {
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+            gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start();
+            osc.stop(audioCtx.currentTime + 0.3);
+          }, idx * 180);
+        });
+      } catch (e) {}
+    }
+
+    function sendGmailInvite() {
+      const code = document.getElementById('roomCodeInput').value || "SYNTH-84";
+      const inviteUrl = `https://${window.location.host || '67kid.edgeone.dev'}/?room=${code}`;
+      const subject = encodeURIComponent(`Join my Hole Slither.io Game! [Room: ${code}]`);
+      const body = encodeURIComponent(`Hey! Join my multiplayer Hole Slither.io game.\n\nRoom Code: ${code}\nDirect Link: ${inviteUrl}\n\nSee you in the arena!`);
+      
+      window.open(`https://mail.google.com/mail/?view=cm&fs=1&su=${subject}&body=${body}`, '_blank');
+    }
+
+    function setupMultiplayerSync() {
+      try {
+        broadcastChannel = new BroadcastChannel(`hole_slither_${roomCode}`);
+        broadcastChannel.onmessage = (event) => {
+          const data = event.data;
+          if (data.type === 'POS_UPDATE' && data.id !== myClientId) {
+            updateRemotePlayer(data);
+          }
+        };
+      } catch (e) {
+        console.warn("BroadcastChannel restricted in sandbox mode.");
+      }
+    }
+
+    function syncMultiplayerState() {
+      if (!broadcastChannel) return;
+      broadcastChannel.postMessage({
+        type: 'POS_UPDATE',
+        id: myClientId,
+        name: player.name,
+        x: player.x,
+        z: player.z,
+        mass: player.mass
+      });
+    }
+
+    function updateRemotePlayer(data) {
+      if (!remotePlayers[data.id]) {
+        const rGroup = new THREE.Group();
+        const ringGeo = new THREE.RingGeometry(2.5, 3.0, 32);
+        const ringMat = new THREE.MeshBasicMaterial({ color: 0x00f2fe, side: THREE.DoubleSide });
+        const ring = new THREE.Mesh(ringGeo, ringMat);
+        ring.rotation.x = -Math.PI / 2;
+        rGroup.add(ring);
+
+        const pit = new THREE.Mesh(new THREE.CylinderGeometry(2.5, 2.2, 10, 32), new THREE.MeshBasicMaterial({ color: 0x000000 }));
+        pit.position.y = -5;
+        rGroup.add(pit);
+
+        scene.add(rGroup);
+        remotePlayers[data.id] = rGroup;
+      }
+
+      remotePlayers[data.id].position.set(data.x, 0, data.z);
+    }
+
+    function toggleRoomInput() {
+      const mode = document.getElementById('gameModeSelect').value;
+      document.getElementById('roomCodeContainer').style.display = mode === 'online' ? 'block' : 'none';
+    }
+
+    function startGame() {
+      player.name = document.getElementById('playerNameInput').value || "CyberHole";
+      roomCode = document.getElementById('roomCodeInput').value || "SYNTH-84";
+
+      document.getElementById('hudPlayerName').innerText = player.name;
+      document.getElementById('startMenu').classList.add('hidden');
+      document.getElementById('hud').classList.remove('hidden');
+
+      isGameRunning = true;
+      startRickrollCountdown();
+      setupMultiplayerSync();
+      showNotification(`ARENA ENTERED: WELCOME ${player.name.toUpperCase()}`);
+    }
+
+    function openPasscodeModal() {
+      document.getElementById('passcodeModal').classList.remove('hidden');
+    }
+
+    function closePasscodeModal() {
+      document.getElementById('passcodeModal').classList.add('hidden');
+    }
+
+    function verifyAdminCode() {
+      const input = document.getElementById('passcodeInput').value;
+      if (input === "6789") {
+        isAdmin = true;
+        closePasscodeModal();
+        document.getElementById('adminPanel').classList.remove('hidden');
+        showNotification("ADMIN STUDIO UNLOCKED!");
+      } else {
+        showNotification("ACCESS DENIED: INCORRECT PASSCODE");
+      }
+    }
+
+    function toggleAdminPanel() {
+      document.getElementById('adminPanel').classList.toggle('hidden');
+    }
+
+    function showNotification(msg) {
+      const toast = document.getElementById('toastNotification');
+      document.getElementById('toastText').innerText = msg;
+      toast.classList.remove('hidden');
+      setTimeout(() => toast.classList.add('hidden'), 3500);
+    }
+
+    function onWindowResize() {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    }
+
+    window.onload = () => {
+      initThreeScene();
+      setupControls();
+      animate();
+    };
+  </script>
+</body>
+</html>
